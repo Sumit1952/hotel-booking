@@ -1,4 +1,4 @@
-import { getAuth } from '@clerk/express';
+import { getAuth, clerkClient } from '@clerk/express';
 import User from "../models/User.js";
 
 export const protect = async(req , res , next)=>{
@@ -11,14 +11,30 @@ export const protect = async(req , res , next)=>{
         
         let user = await User.findById(userId);
         if(!user){
-            user = await User.create({
-                _id: userId,
-                username: "User",
-                email: "user@example.com",
-                image: "",
-                role: "user",
-                recentSearchedCities: []
-            });
+            try {
+                const clerkUser = await clerkClient.users.getUser(userId);
+                const email = clerkUser.emailAddresses?.[0]?.emailAddress || "user@example.com";
+                const username = `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "User";
+                const image = clerkUser.imageUrl || "";
+
+                user = await User.create({
+                    _id: userId,
+                    username,
+                    email,
+                    image,
+                    role: "user",
+                    recentSearchedCities: []
+                });
+            } catch (clerkErr) {
+                user = await User.create({
+                    _id: userId,
+                    username: "User",
+                    email: "user@example.com",
+                    image: "",
+                    role: "user",
+                    recentSearchedCities: []
+                });
+            }
         }
         req.user = user;
         next();

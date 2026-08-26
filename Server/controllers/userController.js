@@ -20,11 +20,14 @@ export const getUserData = async (req,res)=>{
 export const storeRecentSearchCities = async(req , res )=>{
     try{
         const {recentSearchedCity} = req.body;
-        const user = await req.user 
+        const user = req.user;
 
-        if(user.recentSearchedCities.lenght<3){
+        if(!user.recentSearchedCities){
+            user.recentSearchedCities = [];
+        }
+
+        if(user.recentSearchedCities.length < 3){
             user.recentSearchedCities.push(recentSearchedCity);
-
         }else{
             user.recentSearchedCities.shift();
             user.recentSearchedCities.push(recentSearchedCity);
