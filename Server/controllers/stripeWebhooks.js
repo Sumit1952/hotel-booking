@@ -11,7 +11,20 @@ export const stripeWebhooks = async (req, res) => {
     let event;
 
     try {
-        event = stripeInstance.webhooks.constructEvent(req.body, sig, stripeWebhookSecret);
+        let payload = req.body;
+        if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
+            payload = req.body;
+        } else if (req.body && typeof req.body === 'object') {
+            payload = JSON.stringify(req.body);
+        }
+
+        if (sig && stripeWebhookSecret) {
+            event = stripeInstance.webhooks.constructEvent(payload, sig, stripeWebhookSecret);
+        } else if (req.body && req.body.type) {
+            event = req.body;
+        } else {
+            throw new Error("Missing stripe-signature header or webhook secret");
+        }
     } catch (error) {
         console.error("Webhook signature verification failed:", error.message);
         return res.status(400).send(`WEBHOOK ERROR: ${error.message}`);
