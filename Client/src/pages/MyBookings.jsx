@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { assets } from '../assets/assets'
 import { useAppContext } from '../context/AppContext';
 import { toast } from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 
 const MyBookings = () => {
     const { axios, getToken, user } = useAppContext();
     const [bookings, setBookings] = useState([]);
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const fetchUserBookings = async () => {
         try {
@@ -21,10 +23,36 @@ const MyBookings = () => {
             toast.error(error.message);
         }
     }
+
+    const verifyPayment = async (bookingId, success) => {
+        try {
+            const token = await getToken();
+            const { data } = await axios.post('/api/bookings/verify-stripe', { bookingId, success }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (data.success) {
+                toast.success("Payment successful!");
+                fetchUserBookings();
+            } else {
+                toast.error(data.message || "Payment verification failed");
+            }
+        } catch (error) {
+            toast.error(error.message);
+        } finally {
+            setSearchParams({});
+        }
+    };
+
     useEffect(() => {
-        if (user)
+        const success = searchParams.get("success");
+        const bookingId = searchParams.get("bookingId");
+
+        if (success === "true" && bookingId) {
+            verifyPayment(bookingId, success);
+        } else if (user) {
             fetchUserBookings();
-    }, [user])
+        }
+    }, [user, searchParams]);
 
   const handlePayment = async (bookingId) => {
     try{

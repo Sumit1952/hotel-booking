@@ -180,10 +180,10 @@ export const stripePayment = async(req , res)=>{
         const session = await stripeInstance.checkout.sessions.create({
             line_items,
             mode : "payment",
-            success_url : `${origin}/my-bookings?success=true`,
+            success_url : `${origin}/my-bookings?success=true&bookingId=${booking._id}`,
             cancel_url : `${origin}/my-bookings?canceled=true` ,
             metadata :{
-                bookingId,
+                bookingId: booking._id.toString(),
             }
         });
         res.json({success: true , url : session.url});
@@ -194,3 +194,22 @@ export const stripePayment = async(req , res)=>{
     }
 
 }
+
+export const verifyStripePayment = async (req, res) => {
+    try {
+        const { bookingId, success } = req.body;
+        if (success === "true" || success === true) {
+            await Booking.findByIdAndUpdate(bookingId, {
+                isPaid: true,
+                paymentMethod: "Stripe",
+                status: "confirmed"
+            });
+            return res.json({ success: true, message: "Payment verified successfully" });
+        } else {
+            return res.json({ success: false, message: "Payment unverified or cancelled" });
+        }
+    } catch (error) {
+        console.error("Verify Stripe Error:", error);
+        return res.json({ success: false, message: error.message });
+    }
+};
