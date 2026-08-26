@@ -13,6 +13,7 @@ import Addroom from './pages/HotelOwner/Addroom.jsx'
 import Listroom from './pages/HotelOwner/Listroom.jsx'
 import {Toaster} from 'react-hot-toast'
 import { useAppContext } from './context/AppContext.jsx';
+import Loader from './components/Loader.jsx';
 
 function App() {
 
@@ -30,6 +31,7 @@ function App() {
            <Route path='/rooms/:id' element={<RoomDetails />}/>
             <Route path='/my-bookings' element={<MyBookings />}/>
             <Route path='/my_bookings' element={<MyBookings />}/>
+             <Route path='/loader/:nexturl*' element={<Loader />}/>
             <Route path='/owner' element={<Layout></Layout>}>
                   <Route index element={<DashBoard></DashBoard>}></Route>
                   <Route path ="add-room" element={<Addroom></Addroom>}></Route>

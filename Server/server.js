@@ -9,6 +9,7 @@ import hotelRouter from "./routes/hotelRoutes.js";
 import connectCloudinary from "./config/cloudinary.js";
 import roomRouter from "./routes/roomRoutes.js";
 import bookingsRoutes from "./routes/bookingsRoutes.js";
+import { stripeWebhooks } from "./controllers/stripeWebhooks.js";
 
 
 dotenv.config();
@@ -24,6 +25,8 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+app.post('/api/stripe' , express.raw({type: "application/json"}),stripeWebhooks)
 
 // JSON body parser middleware for standard API routes
 app.use(express.json());
