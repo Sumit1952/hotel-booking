@@ -4,7 +4,7 @@ import StarRating from './StarRating'
 
 const Testimonial = () => {
   return (
-    <div className="py-16 px-6 md:px-16 lg:px-24 xl:px-32 max-w-7xl mx-auto">
+    <div className="py-16 px-4 md:px-12 lg:px-16 max-w-[1350px] mx-auto w-full">
         <div className="text-center md:text-left mb-12">
             <h2 className="font_playfair text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
                 Our Guest Stories

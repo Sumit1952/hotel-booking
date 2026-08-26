@@ -1,12 +1,12 @@
 import React from 'react'
-import { roomsDummyData } from '../assets/assets'
 import Hotelcard from './Hotelcard'
 import {useNavigate} from 'react-router-dom'
+import { useAppContext } from '../context/AppContext';
 
 const FeaturedDestination = () => {
-    const navigate = useNavigate();
-  return (
-    <section className="py-16 px-6 md:px-16 lg:px-24 xl:px-32 max-w-7xl mx-auto">
+    const {rooms , navigate}=useAppContext();
+  return rooms.length> 0 && (
+    <section className="py-16 px-4 md:px-12 lg:px-16 max-w-[1350px] mx-auto w-full">
         <div className="text-center md:text-left mb-12">
             <h2 className="font-playfair text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
                 Featured Accommodations
@@ -17,7 +17,7 @@ const FeaturedDestination = () => {
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-           {roomsDummyData.slice(0, 4).map((room, i) => (
+           {rooms.slice(0, 4).map((room, i) => (
                <Hotelcard room={room} key={room._id || i} index={i} />
            ))} 
         </div>

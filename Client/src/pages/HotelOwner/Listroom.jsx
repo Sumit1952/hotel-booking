@@ -1,8 +1,53 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { roomsDummyData, assets } from '../../assets/assets'
+import { useAppContext } from '../../context/AppContext'
+import { toast } from 'react-hot-toast'
+
 
 const Listroom = () => {
-    const [rooms , setRooms] = useState(roomsDummyData);
+    const [rooms , setRooms] = useState([]);
+    const {axios , getToken , user}=useAppContext();
+
+    const fetchRooms = async()=>{
+        try{
+            const token = await getToken();
+            const {data} = await axios.get('/api/rooms/owner' , {headers:{Authorization:`Bearer ${token}`}})
+            if(data.success){
+                setRooms(Array.isArray(data.rooms) ? data.rooms : []);
+            } else {
+                toast.error(data.message);
+            }
+        }
+        catch(error){
+            toast.error(error.response?.data?.message || error.message);
+        }
+    }
+
+    const toggleAvailability = async (roomId) => {
+        try {
+            // Optimistic UI update
+            setRooms(prevRooms => prevRooms.map(room => room._id === roomId ? { ...room, isAvailable: !room.isAvailable } : room));
+
+            const token = await getToken();
+            const { data } = await axios.post('/api/rooms/toggle-availability', { roomId }, { headers: { Authorization: `Bearer ${token}` } });
+            if (data.success) {
+                toast.success(data.message);
+            } else {
+                toast.error(data.message);
+                fetchRooms();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message);
+            fetchRooms();
+        }
+    }
+
+    useEffect(() => {
+        if (user) {
+            fetchRooms();
+        }
+    }, [user]);
+    
   return (
     <div>
         <div className="flex flex-col items-start text-left">
@@ -25,14 +70,14 @@ const Listroom = () => {
                     rooms.map((item , index)=>(
                         <tr key={index}>
                             <td className="py-3  px-4 text-gray-700 border-t border-gray-300">{item.roomType}</td>
-                            <td className="py-3  px-4 text-gray-700 border-t border-gray-300 max-sm:hidden">{item.amenities.join(', ')}</td>
-                            <td className="py-3  px-4 text-gray-700 border-t border-gray-300 text-center">Rs.{item.pricePerNight}</td>
+                            <td className="py-3  px-4 text-gray-700 border-t border-gray-300 max-sm:hidden">{Array.isArray(item.amenities) ? item.amenities.join(', ') : item.amenities}</td>
+                            <td className="py-3  px-4 text-gray-700 border-t border-gray-300 text-center">{currency}{item.pricePerNight}</td>
                             <td className="py-3  px-4  border-t border-gray-300 text-sm text-red-500 text-center">
-                                <label htmlFor=""className="relative inline-flex items-center cursor-pointer txt-gray-900 gap-3">
-                                    <input className="sr-only peer" type="checkbox" checked={item.isAvailable}/>
+                                <label className="relative inline-flex items-center cursor-pointer text-gray-900 gap-3">
+                                    <input className="sr-only peer" type="checkbox" checked={item.isAvailable} onChange={() => toggleAvailability(item._id)}/>
                                     <div className="w-12 h-7 bg-slate-300 rounded-full peer peer-checked:bg-blue-600 transition-colors duration-200">
                                     </div>
-                                    <span className="dot absolute left-1 top-1  bg-white w-5 h-5 rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-5" ></span>
+                                    <span className="dot absolute left-1 top-1  bg-white w-5 h-5 rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-5 pointer-events-none" ></span>
                     
                                 </label>
                             </td>
