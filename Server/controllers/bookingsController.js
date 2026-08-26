@@ -30,7 +30,7 @@ const checkAvailability = async({checkInDate , checkOutDate ,room}) =>{
 
 export const checkAvailabilityAPI = async (req,res) =>{
     try {
-        const {room , checkInDate , checkOutDate } = req.query;
+        const {room , checkInDate , checkOutDate } = req.method === 'POST' ? (req.body || {}) : (req.query || {});
         const isAvailable = await checkAvailability({checkInDate , checkOutDate ,room});
         res.json({success:true , isAvailable});
     }

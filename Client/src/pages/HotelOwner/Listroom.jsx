@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast'
 
 const Listroom = () => {
     const [rooms , setRooms] = useState([]);
-    const {axios , getToken , user}=useAppContext();
+    const {axios , getToken , user, currency}=useAppContext();
 
     const fetchRooms = async()=>{
         try{
@@ -66,12 +66,18 @@ const Listroom = () => {
               </tr>
             </thead>
             <tbody className="text-sm">
-                {
+                {rooms.length === 0 ? (
+                    <tr>
+                        <td colSpan="4" className="text-center py-8 text-gray-500">
+                            No rooms added yet. Go to Add Room to list your first room!
+                        </td>
+                    </tr>
+                ) : (
                     rooms.map((item , index)=>(
-                        <tr key={index}>
+                        <tr key={item._id || index}>
                             <td className="py-3  px-4 text-gray-700 border-t border-gray-300">{item.roomType}</td>
                             <td className="py-3  px-4 text-gray-700 border-t border-gray-300 max-sm:hidden">{Array.isArray(item.amenities) ? item.amenities.join(', ') : item.amenities}</td>
-                            <td className="py-3  px-4 text-gray-700 border-t border-gray-300 text-center">{currency}{item.pricePerNight}</td>
+                            <td className="py-3  px-4 text-gray-700 border-t border-gray-300 text-center">{currency || '$'}{item.pricePerNight}</td>
                             <td className="py-3  px-4  border-t border-gray-300 text-sm text-red-500 text-center">
                                 <label className="relative inline-flex items-center cursor-pointer text-gray-900 gap-3">
                                     <input className="sr-only peer" type="checkbox" checked={item.isAvailable} onChange={() => toggleAvailability(item._id)}/>
@@ -86,7 +92,7 @@ const Listroom = () => {
                         </tr>
 
                     ))
-                }
+                )}
 
             </tbody>
 
