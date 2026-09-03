@@ -34,6 +34,17 @@ const Addroom = () => {
             toast.error("Please fill all the inputs")
             return;
         }
+
+        // Check total image size (Vercel has 4.5MB request payload limit)
+        let totalSize = 0;
+        Object.values(images).forEach(img => {
+            if (img) totalSize += img.size;
+        });
+        if (totalSize > 4.5 * 1024 * 1024) {
+            toast.error("Total image size exceeds 4.5MB limit. Please select smaller/compressed images.");
+            return;
+        }
+
         setLoading(true)
         try {
             const formData = new FormData()
