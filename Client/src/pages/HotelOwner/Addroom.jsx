@@ -27,21 +27,61 @@ const Addroom = () => {
     })
     const [loading, setLoading] = useState(false)
 
+    const compressImage = (file) => {
+        return new Promise((resolve) => {
+            if (!file || file.size < 600 * 1024) {
+                resolve(file);
+                return;
+            }
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 1200;
+
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+                            resolve(compressedFile);
+                        } else {
+                            resolve(file);
+                        }
+                    }, 'image/jpeg', 0.75);
+                };
+                img.onerror = () => resolve(file);
+            };
+            reader.onerror = () => resolve(file);
+        });
+    };
+
     const onSubmitHandler = async (e) => {
         e.preventDefault()
         // check if all inputs are filled
         if (!inputs.roomType || !inputs.pricePerNight || !Object.values(images).some(image => image)) {
             toast.error("Please fill all the inputs")
-            return;
-        }
-
-        // Check total image size (Vercel has 4.5MB request payload limit)
-        let totalSize = 0;
-        Object.values(images).forEach(img => {
-            if (img) totalSize += img.size;
-        });
-        if (totalSize > 4.5 * 1024 * 1024) {
-            toast.error("Total image size exceeds 4.5MB limit. Please select smaller/compressed images.");
             return;
         }
 
@@ -52,9 +92,14 @@ const Addroom = () => {
             formData.append("pricePerNight", inputs.pricePerNight)
             const amenities = Object.keys(inputs.amenities).filter(key => inputs.amenities[key])
             formData.append('amenities', JSON.stringify(amenities))
-            Object.keys(images).forEach(key => {
-                images[key] && formData.append('images', images[key])
-            })
+
+            for (const key of Object.keys(images)) {
+                if (images[key]) {
+                    const compressed = await compressImage(images[key]);
+                    formData.append('images', compressed);
+                }
+            }
+
             const { data } = await axios.post('/api/rooms', formData, { headers: { Authorization: `Bearer ${await getToken()}` } })
             if (data.success) {
                 toast.success(data.message)
