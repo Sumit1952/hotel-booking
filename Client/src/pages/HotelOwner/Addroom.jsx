@@ -18,7 +18,7 @@ const Addroom = () => {
         pricePerNight: 0,
         amenities: {
             'Free WiFi': false,
-            'Free BreakFast': false,
+            'Free Breakfast': false,
             'Room Service': false,
             'Mountain View': false,
             'Pool Access': false
@@ -52,7 +52,7 @@ const Addroom = () => {
                     pricePerNight: 0,
                     amenities: {
                         'Free WiFi': false,
-                        'Free BreakFast': false,
+                        'Free Breakfast': false,
                         'Room Service': false,
                         'Mountain View': false,
                         'Pool Access': false
