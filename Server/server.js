@@ -19,6 +19,11 @@ connectCloudinary();
 
 const app = express();
 
+app.use(async (req, res, next) => {
+    await connectDB();
+    next();
+});
+
 app.use(cors({
     origin: true,
     credentials: true
