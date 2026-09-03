@@ -71,8 +71,9 @@ export  const createBooking = async (req,res) =>{
             checkOutDate,
             totalPrice,
         })
+        const senderEmail = (process.env.SENDER_EMAIL || '').replace(/['"]/g, '').trim();
         const mailOption = {
-            from: process.env.SENDER_EMAIL, // sender address
+            from: senderEmail, // sender address
             to: req.user.email, // list of recipients
             subject: "Booking Confirmation - SUMI HOTEL", // subject line
             html: `
@@ -108,6 +109,93 @@ export  const createBooking = async (req,res) =>{
         res.json({success:false , message:"failed to create booking"});
     }
 };
+
+export const sendBookingConfirmationEmail = async (bookingId, userEmail = null, username = null) => {
+    try {
+        const booking = await Booking.findById(bookingId).populate({
+            path: 'room',
+            populate: { path: 'hotel' }
+        }).populate('hotel');
+
+        if (!booking) return;
+
+        let emailToUse = userEmail;
+        let nameToUse = username || "Guest";
+
+        if (!emailToUse) {
+            const User = (await import('../models/User.js')).default;
+            const userData = await User.findById(booking.user);
+            if (userData) {
+                emailToUse = userData.email;
+                nameToUse = userData.username || nameToUse;
+            }
+        }
+
+        if (!emailToUse || emailToUse === 'user@example.com') {
+            console.log("Skipping email: No valid recipient email address available.");
+            return;
+        }
+
+        const senderEmail = (process.env.SENDER_EMAIL || '').replace(/['"]/g, '').trim();
+
+        const mailOption = {
+            from: senderEmail,
+            to: emailToUse,
+            subject: `Booking & Payment Confirmation - SUMI HOTEL`,
+            html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                <h1 style="color: #1a202c;">Booking Confirmation - Sumi Hotel</h1>
+                <p>Dear ${nameToUse},</p>
+                <p>Thank you for choosing Sumi Hotel. Your payment and booking details are confirmed:</p>
+                <ul style="line-height: 1.8;">
+                  <li><strong>Booking ID:</strong> ${booking._id}</li>
+                  <li><strong>Hotel:</strong> ${booking.hotel?.name || booking.room?.hotel?.name || 'Sumi Hotel'}</li>
+                  <li><strong>Location:</strong> ${booking.hotel?.address || booking.room?.hotel?.address || ''}</li> 
+                  <li><strong>Check-in Date:</strong> ${new Date(booking.checkInDate).toDateString()}</li>
+                  <li><strong>Check-out Date:</strong> ${new Date(booking.checkOutDate).toDateString()}</li>
+                  <li><strong>Guests:</strong> ${booking.guests}</li>
+                  <li><strong>Total Price:</strong> $${booking.totalPrice}</li>
+                  <li><strong>Payment Method:</strong> ${booking.paymentMethod}</li>
+                  <li><strong>Payment Status:</strong> <strong style="color: ${booking.isPaid ? '#22c55e' : '#ef4444'};">${booking.isPaid ? 'PAID' : 'UNPAID'}</strong></li>
+                </ul>
+                <br/>
+                <p>We look forward to welcoming you!</p>
+                <p>Best regards,<br/><strong>Sumi Hotel Team</strong></p>
+            </div>
+            `
+        };
+
+        await transporter.sendMail(mailOption);
+        console.log(`Confirmation email sent successfully to ${emailToUse}`);
+    } catch (emailErr) {
+        console.error("Failed to send confirmation email:", emailErr);
+    }
+};
+
+export const verifyStripePayment = async (req, res) => {
+    try {
+        const { bookingId, success } = req.body;
+        if (success === "true" || success === true) {
+            const updatedBooking = await Booking.findByIdAndUpdate(bookingId, {
+                isPaid: true,
+                paymentMethod: "Stripe",
+                status: "confirmed"
+            }, { new: true });
+
+            if (updatedBooking) {
+                await sendBookingConfirmationEmail(bookingId, req.user?.email, req.user?.username);
+            }
+
+            return res.json({ success: true, message: "Payment verified successfully" });
+        } else {
+            return res.json({ success: false, message: "Payment unverified or cancelled" });
+        }
+    } catch (error) {
+        console.error("Verify Stripe Error:", error);
+        return res.json({ success: false, message: error.message });
+    }
+};
+
 //api to get all bookings for a user 
 //get / api /bookings/user
 export const getUserBookings = async (req,res)=>{
@@ -193,23 +281,4 @@ export const stripePayment = async(req , res)=>{
         res.json({success: false, message: error.message});
     }
 
-}
-
-export const verifyStripePayment = async (req, res) => {
-    try {
-        const { bookingId, success } = req.body;
-        if (success === "true" || success === true) {
-            await Booking.findByIdAndUpdate(bookingId, {
-                isPaid: true,
-                paymentMethod: "Stripe",
-                status: "confirmed"
-            });
-            return res.json({ success: true, message: "Payment verified successfully" });
-        } else {
-            return res.json({ success: false, message: "Payment unverified or cancelled" });
-        }
-    } catch (error) {
-        console.error("Verify Stripe Error:", error);
-        return res.json({ success: false, message: error.message });
-    }
-};
+}
