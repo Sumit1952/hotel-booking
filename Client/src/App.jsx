@@ -31,6 +31,7 @@ function App() {
            <Route path='/rooms/:id' element={<RoomDetails />}/>
             <Route path='/my-bookings' element={<MyBookings />}/>
             <Route path='/my_bookings' element={<MyBookings />}/>
+             <Route path='/loader/:nexturl' element={<Loader />}/>
              <Route path='/loader/:nexturl/*' element={<Loader />}/>
             <Route path='/owner' element={<Layout></Layout>}>
                   <Route index element={<DashBoard></DashBoard>}></Route>

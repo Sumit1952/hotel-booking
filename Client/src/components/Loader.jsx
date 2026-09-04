@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 const Loader = () => {
     const navigate = useNavigate();
-    const { nexturl } = useParams();
+    const params = useParams();
+    const nexturl = params.nexturl ? (params['*'] ? `${params.nexturl}/${params['*']}` : params.nexturl) : (params['*'] || '');
 
     useEffect(() => {
         if (nexturl) {
